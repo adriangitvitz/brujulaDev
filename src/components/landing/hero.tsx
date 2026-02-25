@@ -41,12 +41,6 @@ export default function HeroSection() {
                 Solicitar acceso
               </Link>
 
-              <a
-                href="#como-funciona"
-                className="cursor-pointer text-white/70 hover:text-white transition-colors text-sm tracking-wide"
-              >
-                Ver cómo funciona →
-              </a>
 
             </div>
           </div>
