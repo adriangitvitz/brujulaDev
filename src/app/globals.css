@@ -50,8 +50,8 @@
   --color-yale: var(--yale);
   --radius: var(--radius);
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-heading: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Inter', 'Geist Mono Fallback', monospace;
 }
 
 body {
