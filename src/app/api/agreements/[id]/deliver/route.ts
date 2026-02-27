@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 
 export async function POST(
@@ -9,8 +9,6 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const sql = getDb();
-
     const { deliveryUrl, deliveryNote, freelancerAddress } = body;
 
     if (!deliveryUrl || !freelancerAddress) {
@@ -21,18 +19,14 @@ export async function POST(
     }
 
     // Verify agreement exists and belongs to freelancer
-    const agreements = await sql`
-      SELECT a.*, j.title as "jobTitle", j.id as "realJobId"
-      FROM "Agreement" a
-      JOIN "Job" j ON a."jobId" = j.id
-      WHERE a.id = ${id} AND a."freelancerAddress" = ${freelancerAddress}
-    `;
+    const agreement = await prisma.agreement.findFirst({
+      where: { id, freelancerAddress },
+      include: { job: { select: { id: true, title: true } } },
+    });
 
-    if (agreements.length === 0) {
+    if (!agreement) {
       return NextResponse.json({ error: "Acuerdo no encontrado" }, { status: 404 });
     }
-
-    const agreement = agreements[0];
 
     if (agreement.status !== "ACTIVE") {
       return NextResponse.json(
@@ -41,27 +35,29 @@ export async function POST(
       );
     }
 
-    // Update agreement
-    await sql`
-      UPDATE "Agreement"
-      SET "deliveryUrl" = ${deliveryUrl},
-          "deliveryNote" = ${deliveryNote || null},
-          "deliveredAt" = NOW(),
-          status = 'WORK_DELIVERED'
-      WHERE id = ${id}
-    `;
-
-    // Update job status
-    await sql`
-      UPDATE "Job" SET status = 'IN_REVIEW' WHERE id = ${agreement.realJobId}
-    `;
+    // Update agreement and job status
+    await prisma.$transaction([
+      prisma.agreement.update({
+        where: { id },
+        data: {
+          deliveryUrl,
+          deliveryNote: deliveryNote || null,
+          deliveredAt: new Date(),
+          status: "WORK_DELIVERED",
+        },
+      }),
+      prisma.job.update({
+        where: { id: agreement.job.id },
+        data: { status: "IN_REVIEW" },
+      }),
+    ]);
 
     // Notify employer
     await createNotification({
       userId: agreement.employerId,
       type: "WORK_DELIVERED",
       title: "Trabajo entregado",
-      message: `El freelancer completo "${agreement.jobTitle}". Revisa la entrega.`,
+      message: `El freelancer completo "${agreement.job.title}". Revisa la entrega.`,
       actionUrl: `/dashboard/employer/agreements/${id}/review`,
     });
 

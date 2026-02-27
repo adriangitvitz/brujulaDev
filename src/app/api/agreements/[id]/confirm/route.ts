@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { releaseFundsServerSide } from "@/lib/escrow/release";
 
 export async function POST(
@@ -9,8 +9,6 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const sql = getDb();
-
     const { freelancerAddress } = body;
 
     if (!freelancerAddress) {
@@ -21,16 +19,13 @@ export async function POST(
     }
 
     // Verify agreement exists, belongs to freelancer, and is approved
-    const agreements = await sql`
-      SELECT * FROM "Agreement"
-      WHERE id = ${id} AND "freelancerAddress" = ${freelancerAddress}
-    `;
+    const agreement = await prisma.agreement.findFirst({
+      where: { id, freelancerAddress },
+    });
 
-    if (agreements.length === 0) {
+    if (!agreement) {
       return NextResponse.json({ error: "Acuerdo no encontrado" }, { status: 404 });
     }
-
-    const agreement = agreements[0];
 
     if (agreement.status !== "EMPLOYER_APPROVED") {
       return NextResponse.json(
@@ -40,12 +35,10 @@ export async function POST(
     }
 
     // Update freelancer confirmation
-    await sql`
-      UPDATE "Agreement"
-      SET "freelancerConfirmed" = true,
-          "freelancerConfirmedAt" = NOW()
-      WHERE id = ${id}
-    `;
+    await prisma.agreement.update({
+      where: { id },
+      data: { freelancerConfirmed: true, freelancerConfirmedAt: new Date() },
+    });
 
     // Release funds server-side
     const txHash = await releaseFundsServerSide(id);

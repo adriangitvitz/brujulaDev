@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const stellarAddress = searchParams.get("stellarAddress");
 
@@ -11,15 +10,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Se requiere stellarAddress" }, { status: 400 });
     }
 
-    const users = await sql`
-      SELECT id FROM "User" WHERE "stellarAddress" = ${stellarAddress}
-    `;
+    const user = await prisma.user.findUnique({
+      where: { stellarAddress },
+      select: { id: true },
+    });
 
-    if (users.length === 0) {
-      return NextResponse.json({ userId: null });
-    }
-
-    return NextResponse.json({ userId: users[0].id });
+    return NextResponse.json({ userId: user?.id || null });
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(

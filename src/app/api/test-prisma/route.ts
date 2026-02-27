@@ -1,33 +1,21 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const sql = getDb();
-
     // Clean up orphaned 'unknown' txHash records
-    const deleted = await sql`
-      DELETE FROM "Transaction" WHERE "txHash" = 'unknown'
-      RETURNING id
-    `;
+    const deleted = await prisma.transaction.deleteMany({
+      where: { txHash: "unknown" },
+    });
 
-    // Test basic connection
-    const result = await sql`SELECT 1 as connected, current_database() as db, current_user as "user"`;
-
-    // List tables
-    const tables = await sql`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-      ORDER BY table_name
-    `;
+    // Test basic connection by counting users
+    const userCount = await prisma.user.count();
 
     return NextResponse.json({
       success: true,
-      message: "Neon conectado correctamente",
-      dbInfo: result[0],
-      tables: tables.map((t) => t.table_name),
-      cleanedUpTransactions: deleted.length,
+      message: "Prisma conectado correctamente",
+      userCount,
+      cleanedUpTransactions: deleted.count,
     });
   } catch (error) {
     console.error("Error:", error);

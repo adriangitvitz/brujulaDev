@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
-import { generateId } from "@/lib/utils";
+import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
@@ -15,98 +14,78 @@ export async function POST(request: Request) {
       );
     }
 
-    const sql = getDb();
-
     // Get job data
-    const jobs = await sql`
-      SELECT id, title, "employerId", "employerAddress", amount
-      FROM "Job"
-      WHERE id = ${jobId}
-    `;
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      select: { id: true, title: true, employerId: true, employerAddress: true, amount: true },
+    });
 
-    if (jobs.length === 0) {
+    if (!job) {
       return NextResponse.json({ error: "Trabajo no encontrado" }, { status: 404 });
     }
 
-    const job = jobs[0];
-
-    // Save escrowContractId on job and set status to ASSIGNED
-    await sql`
-      UPDATE "Job"
-      SET "escrowContractId" = ${contractId}, status = 'ASSIGNED'
-      WHERE id = ${jobId}
-    `;
-
     // Upsert freelancer user
-    const existingUsers = await sql`
-      SELECT id FROM "User" WHERE "stellarAddress" = ${freelancerAddress}
-    `;
+    const user = await prisma.user.upsert({
+      where: { stellarAddress: freelancerAddress },
+      update: {},
+      create: {
+        stellarAddress: freelancerAddress,
+        displayName: `Usuario ${freelancerAddress.slice(0, 6)}...`,
+        role: "FREELANCER",
+      },
+    });
 
-    let freelancerId: string;
-
-    if (existingUsers.length > 0) {
-      freelancerId = existingUsers[0].id;
-    } else {
-      freelancerId = generateId(25);
-      const displayName = `Usuario ${freelancerAddress.slice(0, 6)}...`;
-      await sql`
-        INSERT INTO "User" (id, "stellarAddress", "displayName", role, "createdAt", "lastSeenAt")
-        VALUES (${freelancerId}, ${freelancerAddress}, ${displayName}, 'FREELANCER', NOW(), NOW())
-      `;
-    }
-
-    // Create Agreement
-    const agreementId = generateId(25);
-    await sql`
-      INSERT INTO "Agreement" (
-        id, "jobId", "employerId", "employerAddress",
-        "freelancerId", "freelancerAddress", "escrowContractId",
-        status, "employerApproved", "freelancerConfirmed", "createdAt"
-      ) VALUES (
-        ${agreementId}, ${jobId}, ${job.employerId}, ${job.employerAddress},
-        ${freelancerId}, ${freelancerAddress}, ${contractId},
-        'ACTIVE', false, false, NOW()
-      )
-    `;
-
-    // Accept application, reject others
-    await sql`
-      UPDATE "Application"
-      SET status = 'ACCEPTED', "acceptedAt" = NOW()
-      WHERE id = ${applicationId}
-    `;
-
-    await sql`
-      UPDATE "Application"
-      SET status = 'REJECTED', "rejectedAt" = NOW()
-      WHERE "jobId" = ${jobId} AND id != ${applicationId} AND status = 'PENDING'
-    `;
+    // Create agreement, update job, accept/reject applications, record transaction
+    const [, , , , agreement] = await prisma.$transaction([
+      prisma.job.update({
+        where: { id: jobId },
+        data: { escrowContractId: contractId, status: "ASSIGNED" },
+      }),
+      prisma.application.update({
+        where: { id: applicationId },
+        data: { status: "ACCEPTED", acceptedAt: new Date() },
+      }),
+      prisma.application.updateMany({
+        where: { jobId, id: { not: applicationId }, status: "PENDING" },
+        data: { status: "REJECTED", rejectedAt: new Date() },
+      }),
+      prisma.transaction.create({
+        data: {
+          jobId,
+          type: "ESCROW_FUNDED",
+          amount: job.amount,
+          txHash: contractId,
+          status: "CONFIRMED",
+          fromAddress: job.employerAddress,
+          toAddress: freelancerAddress,
+          confirmedAt: new Date(),
+        },
+      }),
+      prisma.agreement.create({
+        data: {
+          jobId,
+          employerId: job.employerId,
+          employerAddress: job.employerAddress,
+          freelancerId: user.id,
+          freelancerAddress,
+          escrowContractId: contractId,
+          status: "ACTIVE",
+        },
+      }),
+    ]);
 
     // Notify freelancer
     await createNotification({
-      userId: freelancerId,
+      userId: user.id,
       type: "APPLICATION_ACCEPTED",
       title: "Postulacion aceptada",
       message: `Tu postulacion para "${job.title}" fue aceptada. Ya puedes empezar a trabajar.`,
       actionUrl: `/dashboard/freelancer`,
     });
 
-    // Record transaction
-    const txId = generateId(25);
-    await sql`
-      INSERT INTO "Transaction" (
-        id, "jobId", type, amount, "txHash", status,
-        "fromAddress", "toAddress", "createdAt", "confirmedAt"
-      ) VALUES (
-        ${txId}, ${jobId}, 'ESCROW_FUNDED', ${job.amount},
-        ${contractId}, 'CONFIRMED',
-        ${job.employerAddress}, ${freelancerAddress}, NOW(), NOW()
-      )
-    `;
-
     return NextResponse.json({
       success: true,
-      agreementId,
+      agreementId: agreement.id,
     });
   } catch (error) {
     console.error("Error finalizing accept:", error);

@@ -1,11 +1,11 @@
 // prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============ USUARIOS ============
@@ -55,7 +55,9 @@ model Job {
   publishedAt      DateTime?
   completedAt      DateTime?
   cancelledAt      DateTime?
-  metadata         Json?  
+  category         String?
+  skills           String?
+  metadata         Json?
 
   // Relaciones
   employer         User     @relation("EmployerJobs", fields: [employerId], references: [id])

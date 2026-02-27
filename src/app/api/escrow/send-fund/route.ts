@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTrustlessWorkClient } from "@/lib/trustlesswork/client";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -20,12 +20,10 @@ export async function POST(request: Request) {
     const response = await client.sendTransaction({ signedXdr });
 
     // Now the escrow is actually funded - update job status
-    const sql = getDb();
-    await sql`
-      UPDATE "Job"
-      SET status = 'FUNDED'
-      WHERE id = ${jobId}
-    `;
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { status: "FUNDED" },
+    });
 
     return NextResponse.json({
       success: true,

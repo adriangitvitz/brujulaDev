@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 
 export async function PUT(
@@ -9,8 +9,6 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const sql = getDb();
-
     const { status } = body;
 
     if (status !== "REJECTED") {
@@ -21,31 +19,26 @@ export async function PUT(
     }
 
     // Get application with job info for notification
-    const apps = await sql`
-      SELECT a.*, j.title as "jobTitle"
-      FROM "Application" a
-      JOIN "Job" j ON a."jobId" = j.id
-      WHERE a.id = ${id}
-    `;
+    const app = await prisma.application.findUnique({
+      where: { id },
+      include: { job: { select: { title: true } } },
+    });
 
-    if (apps.length === 0) {
+    if (!app) {
       return NextResponse.json({ error: "Aplicacion no encontrada" }, { status: 404 });
     }
 
-    const app = apps[0];
-
-    await sql`
-      UPDATE "Application"
-      SET status = 'REJECTED', "rejectedAt" = NOW()
-      WHERE id = ${id}
-    `;
+    await prisma.application.update({
+      where: { id },
+      data: { status: "REJECTED", rejectedAt: new Date() },
+    });
 
     // Notify freelancer
     await createNotification({
       userId: app.freelancerId,
       type: "APPLICATION_REJECTED",
       title: "Postulacion no seleccionada",
-      message: `Tu postulacion para "${app.jobTitle}" no fue seleccionada`,
+      message: `Tu postulacion para "${app.job.title}" no fue seleccionada`,
     });
 
     return NextResponse.json({ success: true });

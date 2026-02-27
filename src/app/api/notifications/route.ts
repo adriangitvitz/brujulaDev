@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
@@ -11,22 +10,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Se requiere userId" }, { status: 400 });
     }
 
-    const notifications = await sql`
-      SELECT * FROM "Notification"
-      WHERE "userId" = ${userId}
-      ORDER BY "createdAt" DESC
-      LIMIT 20
-    `;
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.notification.count({
+        where: { userId, read: false },
+      }),
+    ]);
 
-    const unreadCount = await sql`
-      SELECT COUNT(*) as count FROM "Notification"
-      WHERE "userId" = ${userId} AND read = false
-    `;
-
-    return NextResponse.json({
-      notifications,
-      unreadCount: Number(unreadCount[0]?.count || 0),
-    });
+    return NextResponse.json({ notifications, unreadCount });
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json(
