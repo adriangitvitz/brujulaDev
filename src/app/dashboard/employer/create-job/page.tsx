@@ -8,7 +8,6 @@ export default function CreateJobPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   
-  // ✅ USAR EL HOOK REAL DE FREIGHTER
   const { address, isConnected, connect } = useWallet();
 
   // Estado del formulario - IGUAL AL PDF
@@ -47,7 +46,7 @@ export default function CreateJobPage() {
         const connectedAddress = await connect();
         
         if (!connectedAddress) {
-          alert("❌ No se pudo conectar la wallet. ¿Tienes Freighter abierto y desbloqueado?");
+          alert("❌ No se pudo conectar la wallet. Intenta de nuevo.");
           return;
         }
         

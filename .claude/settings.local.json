@@ -18,7 +18,9 @@
       "Bash(npm ls:*)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(npm view:*)",
-      "Bash(npm pack:*)"
+      "Bash(npm pack:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)"
     ]
   }
 }

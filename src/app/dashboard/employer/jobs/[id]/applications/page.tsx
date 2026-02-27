@@ -109,7 +109,7 @@ export default function EmployerApplicationsPage() {
     if (!isConnected || !walletAddress) {
       walletAddress = await connect();
       if (!walletAddress) {
-        setErrorMsg("No se pudo conectar la wallet. Asegurate de tener Freighter abierto.");
+        setErrorMsg("No se pudo conectar la wallet. Intenta de nuevo.");
         setAcceptStep("error");
         return;
       }
@@ -279,10 +279,10 @@ export default function EmployerApplicationsPage() {
   // Step messages for the processing overlay
   const stepMessages: Record<string, { title: string; desc: string }> = {
     "deploying": { title: "Creando contrato escrow...", desc: "Conectando con Trustless Work" },
-    "signing-deploy": { title: "Firma 1/2: Crear escrow", desc: "Revisa y aprueba en Freighter" },
+    "signing-deploy": { title: "Firma 1/2: Crear escrow", desc: "Revisa y aprueba en tu wallet" },
     "sending-deploy": { title: "Enviando deploy a Stellar...", desc: "Creando el contrato en la blockchain" },
     "funding": { title: "Preparando deposito...", desc: "Generando transaccion de fondeo" },
-    "signing-fund": { title: "Firma 2/2: Depositar USDC", desc: "Revisa y aprueba en Freighter" },
+    "signing-fund": { title: "Firma 2/2: Depositar USDC", desc: "Revisa y aprueba en tu wallet" },
     "sending-fund": { title: "Depositando USDC...", desc: "Enviando fondos al escrow" },
     "finalizing": { title: "Finalizando...", desc: "Creando acuerdo y notificando al freelancer" },
   };

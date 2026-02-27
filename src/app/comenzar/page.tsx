@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { ConnectButton } from "accesly";
 import { useWallet } from "@/hooks/useWallet";
 import BrujulaLogo from "@/components/landing/brujula-logo";
 import Link from "next/link";
@@ -10,35 +11,47 @@ type Role = "employer" | "freelancer" | null;
 
 export default function ComenzarPage() {
   const router = useRouter();
-  const { address, isConnected, isConnecting, connect } = useWallet();
+  const { address, isConnected, isConnecting } = useWallet();
   const [selectedRole, setSelectedRole] = useState<Role>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = async () => {
+  // ConnectButton manages the modal internally — we trigger it programmatically.
+  const hiddenConnectRef = useRef<HTMLDivElement>(null);
+
+  // Stores the role chosen before the user connects, so the
+  // useEffect below can redirect once address becomes available.
+  const pendingRoleRef = useRef<Role>(null);
+
+  // When Accesly sets the wallet, proceed if we have a pending role.
+  useEffect(() => {
+    if (address && pendingRoleRef.current) {
+      const role = pendingRoleRef.current;
+      pendingRoleRef.current = null;
+      sessionStorage.setItem("brujula_role", role);
+      sessionStorage.setItem("brujula_wallet", address);
+      router.push(
+        role === "employer" ? "/dashboard/employer" : "/dashboard/freelancer"
+      );
+    }
+  }, [address, router]);
+
+  const handleContinue = () => {
     if (!selectedRole) return;
 
-    setIsLoading(true);
-    try {
-      let walletAddress: string | null | undefined = address;
-      if (!isConnected || !walletAddress) {
-        walletAddress = await connect();
-        if (!walletAddress) {
-          setIsLoading(false);
-          return;
-        }
-      }
-
+    // Already connected — redirect immediately.
+    if (isConnected && address) {
       sessionStorage.setItem("brujula_role", selectedRole);
-      sessionStorage.setItem("brujula_wallet", walletAddress);
-
+      sessionStorage.setItem("brujula_wallet", address);
       router.push(
-        selectedRole === "employer"
-          ? "/dashboard/employer"
-          : "/dashboard/freelancer"
+        selectedRole === "employer" ? "/dashboard/employer" : "/dashboard/freelancer"
       );
-    } catch {
-      setIsLoading(false);
+      return;
     }
+
+    // Save the role, then trigger Accesly's ConnectButton modal.
+    // The modal lives inside ConnectButton's internal state — we can't
+    // open it by calling connect() directly, so we click the button.
+    pendingRoleRef.current = selectedRole;
+    hiddenConnectRef.current?.querySelector("button")?.click();
   };
 
   return (
@@ -161,29 +174,24 @@ export default function ComenzarPage() {
           {/* CTA */}
           <button
             onClick={handleContinue}
-            disabled={!selectedRole || isLoading || isConnecting}
-            className="w-full py-3.5 rounded-xl font-semibold tracking-wide cursor-pointer
-            bg-[#2F4E79] hover:bg-[#1F2A44] active:bg-[#0F1A34]
-            transition disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={!selectedRole || isConnecting}
+            className="w-full py-3.5 rounded-xl font-semibold tracking-wide cursor-pointer bg-[#2F4E79] hover:bg-[#1F2A44] active:bg-[#0F1A34] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            suppressHydrationWarning
           >
-            {isLoading || isConnecting
+            {isConnecting
               ? "Conectando wallet..."
               : !isConnected
               ? "Conectar wallet y continuar"
               : "Continuar"}
           </button>
 
+          {/* Hidden ConnectButton — owns the modal state; we click it programmatically */}
+          <div ref={hiddenConnectRef} style={{ position: "fixed", top: "-9999px", left: "-9999px", visibility: "hidden" }}>
+            <ConnectButton />
+          </div>
+
           <p className="text-center text-xs text-neutral-500 mt-4">
-            Necesitas la extensión{" "}
-            <a
-              href="https://www.freighter.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#9BB8D3] hover:underline cursor-pointer"
-            >
-              Freighter
-            </a>{" "}
-            para conectar tu wallet Stellar
+            Conecta tu wallet Stellar de forma segura con Accesly
           </p>
         </div>
       </main>

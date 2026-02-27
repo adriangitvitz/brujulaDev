@@ -124,7 +124,7 @@ export default function ReviewDeliveryPage() {
         return;
       }
 
-      // Step 2: Sign with Freighter
+      // Step 2: Sign with wallet
       setStep("signing");
       const signedXdr = await signTransaction(approveData.unsignedXdr, {
         networkPassphrase: "Test SDF Network ; September 2015",
@@ -192,11 +192,11 @@ export default function ReviewDeliveryPage() {
           <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-primary border-r-transparent mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
             {step === "approving" && "Preparando aprobacion..."}
-            {step === "signing" && "Firmando con Freighter..."}
+            {step === "signing" && "Firmando con tu wallet..."}
             {step === "sending" && "Enviando a Stellar..."}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {step === "signing" && "Revisa y aprueba en Freighter"}
+            {step === "signing" && "Revisa y aprueba en tu wallet"}
           </p>
         </div>
       </div>
