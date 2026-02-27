@@ -1,85 +1,89 @@
 "use server";
 
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function getJobs(status?: string) {
-  const sql = getDb();
-
-  if (status) {
-    return sql`SELECT * FROM "Job" WHERE status = ${status} ORDER BY "createdAt" DESC`;
-  }
-  return sql`SELECT * FROM "Job" ORDER BY "createdAt" DESC`;
+  return prisma.job.findMany({
+    where: status ? { status } : undefined,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export async function getJobById(id: string) {
-  const sql = getDb();
-  const jobs = await sql`SELECT * FROM "Job" WHERE id = ${id}`;
-  return jobs[0] || null;
+  return prisma.job.findUnique({ where: { id } });
 }
 
 export async function getUserByAddress(stellarAddress: string) {
-  const sql = getDb();
-  const users = await sql`SELECT * FROM "User" WHERE "stellarAddress" = ${stellarAddress}`;
-  return users[0] || null;
+  return prisma.user.findUnique({ where: { stellarAddress } });
 }
 
 export async function getUserIdByAddress(stellarAddress: string) {
-  const sql = getDb();
-  const users = await sql`SELECT id FROM "User" WHERE "stellarAddress" = ${stellarAddress}`;
-  return users[0]?.id || null;
+  const user = await prisma.user.findUnique({
+    where: { stellarAddress },
+    select: { id: true },
+  });
+  return user?.id || null;
 }
 
 export async function getApplicationsByJobId(jobId: string) {
-  const sql = getDb();
-  return sql`SELECT * FROM "Application" WHERE "jobId" = ${jobId} ORDER BY "appliedAt" DESC`;
+  return prisma.application.findMany({
+    where: { jobId },
+    orderBy: { appliedAt: "desc" },
+  });
 }
 
 export async function getApplicationsByFreelancerAddress(address: string) {
-  const sql = getDb();
-  return sql`
-    SELECT a.*, j.title as "jobTitle", j.amount as "jobAmount", j.status as "jobStatus"
-    FROM "Application" a
-    JOIN "Job" j ON a."jobId" = j.id
-    WHERE a."freelancerAddress" = ${address}
-    ORDER BY a."appliedAt" DESC
-  `;
+  return prisma.application.findMany({
+    where: { freelancerAddress: address },
+    include: {
+      job: { select: { title: true, amount: true, status: true } },
+    },
+    orderBy: { appliedAt: "desc" },
+  });
 }
 
 export async function getNotificationsForUser(userId: string) {
-  const sql = getDb();
-  return sql`SELECT * FROM "Notification" WHERE "userId" = ${userId} ORDER BY "createdAt" DESC LIMIT 20`;
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
 }
 
 export async function getAgreementsByFreelancerAddress(address: string) {
-  const sql = getDb();
-  return sql`
-    SELECT a.*, j.title as "jobTitle", j.amount as "jobAmount", j.deliverables as "jobDeliverables"
-    FROM "Agreement" a
-    JOIN "Job" j ON a."jobId" = j.id
-    WHERE a."freelancerAddress" = ${address}
-    ORDER BY a."createdAt" DESC
-  `;
+  return prisma.agreement.findMany({
+    where: { freelancerAddress: address },
+    include: {
+      job: { select: { title: true, amount: true, deliverables: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export async function getAgreementsByEmployerAddress(address: string) {
-  const sql = getDb();
-  return sql`
-    SELECT a.*, j.title as "jobTitle", j.amount as "jobAmount"
-    FROM "Agreement" a
-    JOIN "Job" j ON a."jobId" = j.id
-    WHERE a."employerAddress" = ${address}
-    ORDER BY a."createdAt" DESC
-  `;
+  return prisma.agreement.findMany({
+    where: { employerAddress: address },
+    include: {
+      job: { select: { title: true, amount: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export async function getAgreementById(id: string) {
-  const sql = getDb();
-  const agreements = await sql`
-    SELECT a.*, j.title as "jobTitle", j.amount as "jobAmount", j.deliverables as "jobDeliverables",
-           j.description as "jobDescription", j."escrowContractId", j."engagementId"
-    FROM "Agreement" a
-    JOIN "Job" j ON a."jobId" = j.id
-    WHERE a.id = ${id}
-  `;
-  return agreements[0] || null;
+  return prisma.agreement.findUnique({
+    where: { id },
+    include: {
+      job: {
+        select: {
+          title: true,
+          amount: true,
+          deliverables: true,
+          description: true,
+          escrowContractId: true,
+          engagementId: true,
+        },
+      },
+    },
+  });
 }

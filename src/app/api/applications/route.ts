@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get("jobId");
     const freelancerAddress = searchParams.get("freelancerAddress");
@@ -11,25 +10,23 @@ export async function GET(request: NextRequest) {
     let applications;
 
     if (jobId && freelancerAddress) {
-      applications = await sql`
-        SELECT * FROM "Application"
-        WHERE "jobId" = ${jobId} AND "freelancerAddress" = ${freelancerAddress}
-        ORDER BY "appliedAt" DESC
-      `;
+      applications = await prisma.application.findMany({
+        where: { jobId, freelancerAddress },
+        orderBy: { appliedAt: "desc" },
+      });
     } else if (jobId) {
-      applications = await sql`
-        SELECT * FROM "Application"
-        WHERE "jobId" = ${jobId}
-        ORDER BY "appliedAt" DESC
-      `;
+      applications = await prisma.application.findMany({
+        where: { jobId },
+        orderBy: { appliedAt: "desc" },
+      });
     } else if (freelancerAddress) {
-      applications = await sql`
-        SELECT a.*, j.title as "jobTitle", j.amount as "jobAmount"
-        FROM "Application" a
-        JOIN "Job" j ON a."jobId" = j.id
-        WHERE a."freelancerAddress" = ${freelancerAddress}
-        ORDER BY a."appliedAt" DESC
-      `;
+      applications = await prisma.application.findMany({
+        where: { freelancerAddress },
+        include: {
+          job: { select: { title: true, amount: true } },
+        },
+        orderBy: { appliedAt: "desc" },
+      });
     } else {
       return NextResponse.json(
         { error: "Se requiere jobId o freelancerAddress" },

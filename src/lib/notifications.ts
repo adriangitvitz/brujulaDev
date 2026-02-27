@@ -1,5 +1,4 @@
-import { getDb } from "@/lib/db";
-import { generateId } from "@/lib/utils";
+import { prisma } from "@/lib/prisma";
 
 export async function createNotification({
   userId,
@@ -14,13 +13,8 @@ export async function createNotification({
   message: string;
   actionUrl?: string;
 }) {
-  const sql = getDb();
-  const id = generateId(25);
-
-  await sql`
-    INSERT INTO "Notification" (id, "userId", type, title, message, "actionUrl", read, "createdAt")
-    VALUES (${id}, ${userId}, ${type}, ${title}, ${message}, ${actionUrl || null}, false, NOW())
-  `;
-
-  return id;
+  const notification = await prisma.notification.create({
+    data: { userId, type, title, message, actionUrl },
+  });
+  return notification.id;
 }

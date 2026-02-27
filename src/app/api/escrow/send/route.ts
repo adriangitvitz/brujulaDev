@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTrustlessWorkClient } from "@/lib/trustlesswork/client";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -19,15 +19,12 @@ export async function POST(request: Request) {
     // Send the signed transaction to Stellar via Trustless Work
     const response = await client.sendTransaction({ signedXdr });
 
-    // If we got a contractId back, save it on the job (deploy step only, not yet funded)
+    // If we got a contractId back, save it on the job
     if (response.contractId && jobId) {
-      const sql = getDb();
-      await sql`
-        UPDATE "Job"
-        SET "escrowContractId" = ${response.contractId},
-            status = 'OPEN'
-        WHERE id = ${jobId}
-      `;
+      await prisma.job.update({
+        where: { id: jobId },
+        data: { escrowContractId: response.contractId, status: "OPEN" },
+      });
     }
 
     return NextResponse.json({

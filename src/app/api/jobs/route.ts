@@ -1,38 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const employer = searchParams.get("employer");
     const status = searchParams.get("status");
 
+    const select = {
+      id: true,
+      title: true,
+      category: true,
+      description: true,
+      amount: true,
+      estimatedDays: true,
+      status: true,
+      skills: true,
+      createdAt: true,
+      escrowContractId: true,
+    } as const;
+
     let jobs;
 
     if (employer) {
-      jobs = await sql`
-        SELECT id, title, category, description, amount, "estimatedDays", status, skills, "escrowContractId", "createdAt"
-        FROM "Job"
-        WHERE "employerId" = (
-          SELECT id FROM "User" WHERE "stellarAddress" = ${employer} LIMIT 1
-        )
-        ORDER BY "createdAt" DESC
-      `;
+      const user = await prisma.user.findUnique({
+        where: { stellarAddress: employer },
+        select: { id: true },
+      });
+      jobs = user
+        ? await prisma.job.findMany({
+            where: { employerId: user.id },
+            select,
+            orderBy: { createdAt: "desc" },
+          })
+        : [];
     } else if (status) {
-      jobs = await sql`
-        SELECT id, title, category, description, amount, "estimatedDays", status, skills, "createdAt"
-        FROM "Job"
-        WHERE status = ${status}
-        ORDER BY "createdAt" DESC
-      `;
+      jobs = await prisma.job.findMany({
+        where: { status },
+        select,
+        orderBy: { createdAt: "desc" },
+      });
     } else {
-      jobs = await sql`
-        SELECT id, title, category, description, amount, "estimatedDays", status, skills, "createdAt"
-        FROM "Job"
-        WHERE status IN ('OPEN', 'FUNDED')
-        ORDER BY "createdAt" DESC
-      `;
+      jobs = await prisma.job.findMany({
+        where: { status: { in: ["OPEN", "FUNDED"] } },
+        select,
+        orderBy: { createdAt: "desc" },
+      });
     }
 
     return NextResponse.json({ jobs });

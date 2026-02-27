@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _request: Request,
@@ -7,21 +7,33 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const sql = getDb();
 
-    const rows = await sql`
-      SELECT id, title, description, deliverables, requirements, amount,
-             "estimatedDays", deadline, status, "engagementId", "escrowContractId",
-             "employerAddress", category, skills, "createdAt"
-      FROM "Job"
-      WHERE id = ${id}
-    `;
+    const job = await prisma.job.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deliverables: true,
+        requirements: true,
+        amount: true,
+        estimatedDays: true,
+        deadline: true,
+        status: true,
+        engagementId: true,
+        escrowContractId: true,
+        employerAddress: true,
+        category: true,
+        skills: true,
+        createdAt: true,
+      },
+    });
 
-    if (rows.length === 0) {
+    if (!job) {
       return NextResponse.json({ error: "Job no encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json(rows[0]);
+    return NextResponse.json(job);
   } catch (error) {
     console.error("Error fetching job:", error);
     return NextResponse.json(

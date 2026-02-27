@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(
   _request: Request,
@@ -7,11 +7,11 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const sql = getDb();
 
-    await sql`
-      UPDATE "Notification" SET read = true WHERE id = ${id}
-    `;
+    await prisma.notification.update({
+      where: { id },
+      data: { read: true },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
