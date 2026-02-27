@@ -3,11 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function NewProfileRedirect() {
   const router = useRouter();
 
   useEffect(() => {
@@ -16,8 +12,11 @@ export default function DashboardLayout({
 
     if (!wallet || !role) {
       router.push("/comenzar");
+      return;
     }
+
+    router.push("/dashboard/freelancer/profile/edit");
   }, [router]);
 
-  return <>{children}</>;
+  return null;
 }

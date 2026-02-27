@@ -1,65 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
+/* =========================
+   HARVEY SPECTER THEME
+   Elite • Corporate • Law Firm
+========================= */
+
 :root {
-  --background: hsl(110, 23%, 94%);
-  --foreground: hsl(215, 75%, 16%);
+  /* Base */
+  --background: hsl(40, 30%, 97%);          /* marfil elegante */
+  --foreground: hsl(220, 40%, 12%);         /* azul-negro intenso */
+
+  /* Cards */
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(215, 75%, 16%);
-  --primary: hsl(213, 73%, 26%);
-  --primary-foreground: hsl(110, 23%, 94%);
-  --secondary: hsl(215, 72%, 22%);
-  --secondary-foreground: hsl(110, 23%, 94%);
-  --muted: hsl(210, 25%, 92%);
-  --muted-foreground: hsl(213, 20%, 45%);
-  --accent: hsl(213, 33%, 66%);
-  --accent-foreground: hsl(215, 75%, 16%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(213, 25%, 85%);
-  --input: hsl(213, 25%, 85%);
-  --ring: hsl(213, 73%, 26%);
-  --radius: 0.75rem;
-  --mint: hsl(110, 23%, 94%);
-  --powder: hsl(213, 33%, 66%);
-  --oxford: hsl(215, 72%, 22%);
-  --prussian: hsl(215, 75%, 16%);
-  --yale: hsl(213, 73%, 26%);
+  --card-foreground: hsl(220, 40%, 12%);
+
+  /* Primary (navy firme) */
+  --primary: hsl(220, 65%, 18%);
+  --primary-foreground: hsl(0, 0%, 100%);
+
+  /* Secondary */
+  --secondary: hsl(220, 50%, 25%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+
+  /* Muted */
+  --muted: hsl(220, 20%, 94%);
+  --muted-foreground: hsl(220, 15%, 40%);
+
+  /* Accent (azul ejecutivo) */
+  --accent: hsl(215, 80%, 32%);
+  --accent-foreground: hsl(0, 0%, 100%);
+
+  /* Destructive */
+  --destructive: hsl(0, 70%, 45%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Borders */
+  --border: hsl(220, 20%, 88%);
+  --input: hsl(220, 20%, 88%);
+  --ring: hsl(215, 80%, 32%);
+
+  /* Radius más firme */
+  --radius: 0.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-mint: var(--mint);
-  --color-powder: var(--powder);
-  --color-oxford: var(--oxford);
-  --color-prussian: var(--prussian);
-  --color-yale: var(--yale);
-  --radius: var(--radius);
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Inter', 'Geist Mono Fallback', monospace;
-}
+/* =========================
+   BASE
+========================= */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
+/* Títulos más firmes */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar elegante */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220, 20%, 80%);
+  border-radius: 4px;
 }

@@ -45,7 +45,7 @@ export default function ComenzarPage() {
     <div className="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
       {/* Header */}
       <header className="p-5 sm:p-7 border-b border-white/5">
-        <Link href="/" className="inline-flex items-center gap-2 opacity-90 hover:opacity-100 transition">
+        <Link href="/" className="inline-flex items-center gap-2 opacity-90 hover:opacity-100 transition cursor-pointer">
           <BrujulaLogo size={28} />
           <span className="font-[family-name:var(--font-heading)] text-lg tracking-wide font-semibold">
             BRUJULA
@@ -73,15 +73,15 @@ export default function ComenzarPage() {
             {/* Employer */}
             <button
               onClick={() => setSelectedRole("employer")}
-              className={`w-full text-left p-6 rounded-xl border transition-all duration-200
+              className={`w-full text-left p-6 rounded-xl border transition-all duration-200 cursor-pointer
               ${
                 selectedRole === "employer"
                   ? "border-[#2F4E79] bg-[#1F2A44]/40 shadow-[0_0_0_1px_rgba(47,78,121,0.4)]"
-                  : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                  : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] active:bg-white/[0.08]"
               }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-colors
                   ${selectedRole === "employer"
                     ? "bg-[#2F4E79]"
                     : "bg-white/5"}`}>
@@ -111,15 +111,15 @@ export default function ComenzarPage() {
             {/* Freelancer */}
             <button
               onClick={() => setSelectedRole("freelancer")}
-              className={`w-full text-left p-6 rounded-xl border transition-all duration-200
+              className={`w-full text-left p-6 rounded-xl border transition-all duration-200 cursor-pointer
               ${
                 selectedRole === "freelancer"
                   ? "border-[#2F4E79] bg-[#1F2A44]/40 shadow-[0_0_0_1px_rgba(47,78,121,0.4)]"
-                  : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                  : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05] active:bg-white/[0.08]"
               }`}
             >
               <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-colors
                   ${selectedRole === "freelancer"
                     ? "bg-[#2F4E79]"
                     : "bg-white/5"}`}>
@@ -162,8 +162,8 @@ export default function ComenzarPage() {
           <button
             onClick={handleContinue}
             disabled={!selectedRole || isLoading || isConnecting}
-            className="w-full py-3.5 rounded-xl font-semibold tracking-wide
-            bg-[#2F4E79] hover:bg-[#1F2A44]
+            className="w-full py-3.5 rounded-xl font-semibold tracking-wide cursor-pointer
+            bg-[#2F4E79] hover:bg-[#1F2A44] active:bg-[#0F1A34]
             transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading || isConnecting
@@ -179,7 +179,7 @@ export default function ComenzarPage() {
               href="https://www.freighter.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#9BB8D3] hover:underline"
+              className="text-[#9BB8D3] hover:underline cursor-pointer"
             >
               Freighter
             </a>{" "}
