@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     // Friendly error for missing USDC trustline
     let errorMessage = error.message;
     if (errorMessage?.includes("does not have the required asset")) {
-      errorMessage = "El freelancer no tiene USDC configurado en su wallet de Stellar. Debe agregar la trustline de USDC en Freighter antes de poder ser asignado.";
+      errorMessage = "El freelancer no tiene la trustline de USDC configurada en su wallet de Stellar. Debe agregar USDC (emisor: GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5) desde Accesly u otro cliente Stellar antes de poder ser asignado.";
     }
 
     return NextResponse.json({

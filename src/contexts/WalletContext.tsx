@@ -65,8 +65,22 @@ function WalletProviderInner({ children }: { children: React.ReactNode }) {
     },
     // opts.networkPassphrase ignored — Accesly handles network internally
     signTransaction: async (xdr, _opts) => {
-      const { signedXdr } = await acceslySign(xdr);
-      return signedXdr;
+      try {
+        const { signedXdr } = await acceslySign(xdr);
+        return signedXdr;
+      } catch (err: any) {
+        const msg: string = err?.message ?? "";
+        if (
+          err?.status === 401 ||
+          msg.includes("401") ||
+          msg.toLowerCase().includes("unauthorized")
+        ) {
+          throw new Error(
+            "Sesión de Accesly expirada. Reconecta tu wallet usando el botón superior derecho y vuelve a intentarlo."
+          );
+        }
+        throw err;
+      }
     },
     refreshBalance,
   };
